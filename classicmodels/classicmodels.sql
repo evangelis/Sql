@@ -1,8 +1,9 @@
 /*!40014 SET SQL_MODE=''*/;
  /*! SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,FOREIGN_KEY_CHECKS=0*/;
 
-CREATE DATABASE IF NOT EXISTS classicmodels;
-USE classicmodels;
+CREATE DATABASE IF NOT EXISTS classicmodels1;
+USE classicmodels1;
+DROP TABLE IF EXISTS productlines,products,offices,employees,customers,payments,orders,orderDetails;
 
 CREATE TABLE IF NOT EXISTS productlines (
 	productLine      VARCHAR(50),
@@ -46,11 +47,11 @@ CREATE TABLE IF NOT EXISTS employees(
 	extension     VARCHAR(10)  NOT NULL, 
 	email		  VARCHAR(100) NOT NULL,
 	officeCode	  VARCHAR(10)  NOT NULL,  
-	reportsTo	  INTEGER      DEFAULT NULL,	
+	reportsTo	  INTEGER      DEFAULT NULL,
 	jobTitle	  VARCHAR(50)  NOT NULL,
 	PRIMARY KEY (employeeNumer),
 	CONSTRAINT fk_employees_offices FOREIGN KEY (officeCode) REFERENCES offices (officeCode),
-	CONSTRAINT fk_employees FOREIGN KEY (employeeNumer) REFERENCES employees (reportsTo)
+	CONSTRAINT fk_employees_reportsTo FOREIGN KEY (reportsTo) REFERENCES employees (employeeNumber)
 );
 
 CREATE TABLE IF NOT EXISTS customers(
