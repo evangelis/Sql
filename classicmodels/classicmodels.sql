@@ -1,8 +1,8 @@
 /*!40014 SET SQL_MODE=''*/;
  /*! SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,FOREIGN_KEY_CHECKS=0*/;
 
-CREATE DATABASE IF NOT EXISTS classicmodels;
-USE classicmodels;
+CREATE DATABASE IF NOT EXISTS classicmodels1;
+USE classicmodels1;
 
 CREATE TABLE IF NOT EXISTS productlines (
 	productLine      VARCHAR(50),
