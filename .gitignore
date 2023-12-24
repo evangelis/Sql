@@ -1,0 +1,24 @@
+./idea #IntelliJ Idea
+*.iml
+*.ipr
+*.iws
+
+target/ #Maven files
+build/ #Gradle files
+
+#Eclipse
+.classpath
+.project
+.settings
+
+*.log # log files
+*.class # Compiled class files
+
+.DS_STORE # OS files
+Thumbs.db
+
+#Java sepcific files
+*.war
+*.jar
+*.ear
+hs_err_pid*
