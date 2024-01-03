@@ -1,6 +1,25 @@
-/*!40014 SET SQL_MODE=''*/;
- /*! SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS,FOREIGN_KEY_CHECKS=0*/;
+/*****************************************************************************************
+ To insert data :
+SET @OLD_SQL_MODE=@@SQL_MODE,SQL_MODE= 'TRADITIONAL';
+SET @OLD_FOREIGN_KEY_CHECKS= @@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_UNIQUE_CHECKS= @@UNIQUE_CHECKS, UNIQUE_CHECKS= 0;
+...At the end of the file 
+SET FOREIGN_KEY_CHECKS = @OLD_FOREIGN_CHECKS;
+SET UNIQUE_CHECKS = @OLD_UNIQUE_CHECKS;
+SET SQL_MODE =@OLD_SQL_MODE;
 
+
+ * There are 8 tables in the database 
+ *   [customers,employees,products,productlines,orders,orderDetails,offices,payments]
+ *  Relationships
+ * One -to-Many Relationships: 
+ * 	 An office has many employees 
+ *   A productline has many products
+ *   A customer makes many payments and many orders (sales orders) 
+ *   An employee serves many customers 
+ *   An office can have multiple employees 
+ ****************************************************************************************/
+ 
 CREATE DATABASE IF NOT EXISTS classicmodels1;
 USE classicmodels1;
 DROP TABLE IF EXISTS productlines,products,offices,employees,customers,payments,orders,orderDetails;
@@ -41,7 +60,7 @@ CREATE TABLE IF NOT EXISTS offices(
 );
 
 CREATE TABLE IF NOT EXISTS employees(
-	employeeNumer INT NOT NULL AUTO_INCREMENT,
+	employeeNumer INT          NOT NULL AUTO_INCREMENT,
 	lastName      VARCHAR(50)  NOT NULL,
 	firstName     VARCHAR(50)  NOT NULL,
 	extension     VARCHAR(10)  NOT NULL, 
@@ -61,11 +80,13 @@ CREATE TABLE IF NOT EXISTS customers(
 	contactFirstName VARCHAR(50)  NOT NULL,
 	phone			 VARCHAR(50)  NOT NULL,
 	addressLine1	 VARCHAR(50)  NOT NULL,
-	addressLine2	 VARCHAR(50)  DEFAULT NULL,
+	addressLine2	 VARCHAR(50)            DEFAULT NULL,
 	city			 VARCHAR(50)  NOT NULL,
-	state  			 VARCHAR(50)  DEFAULT NULL, 
-	salesRepEmployeeNumber INT    DEFAULT NULL,
-	creditLimit      DECIMAL(10,2) DEFAULT NULL,      
+	state  			 VARCHAR(50)            DEFAULT NULL,
+	postalCode       VARCHAR(15)            DEFAULT NULL
+	country          VARCHAR(50)  NOT NULL, 
+	salesRepEmployeeNumber INT              DEFAULT NULL,
+	creditLimit      DECIMAL(10,2)          DEFAULT NULL,      
 	PRIMARY KEY (customerNumber),
 	CONSTRAINT fk_customers_employees FOREIGN KEY (salesRepEmployeeNumber) REFERENCES customers(employeeNumer)
 );
@@ -91,6 +112,7 @@ CREATE TABLE IF NOT EXISTS orders(
 	CONSTRAINT fk_orders_customers FOREIGN KEY (customerNumber) REFERENCES customers(customerNumber)
 );
 
+
 CREATE TABLE IF NOT EXISTS orderDetails(
 	orderNumber      INTEGER,
 	productCode	     VARCHAR(15)   NOT NULL,
@@ -101,3 +123,13 @@ CREATE TABLE IF NOT EXISTS orderDetails(
 	CONSTRAINT fk_od_orders FOREIGN KEY (orderNumber) REFERENCES orders(orderNumber),
 	CONSTRAINT fk_od_products FOREIGN KEY (productCode) REFERENCES products(productCode)
 );
+
+SELECT * FROM information_schema.tables WHERE table_schema = 'classicmodels1' 	
+	AND table_type ='BASE TABLE';
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'classicmodels1'
+	AND table_type = 'VIEW';
+SHOW TABLES FROM classicmodels1;
+
+--customers table
+SHOW EXTENDED COLUMNS FROM classicmodels1.customers;
+SHOW INDEXES FROM customers \G 
