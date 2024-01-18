@@ -28,7 +28,7 @@ USE classicmodels1;
 --employees_audit  keeps the changes of the employees table
 CREATE TABLE IF NOT EXISTS employees_audit (
     INT AUTO_INCREMENT PRIMARY KEY,employeeNumber INT NOT NULL,
-    lastname VARCHAR(50) NOT NULL, changedat DATETIME DEFAULT NULL,
+    lastName VARCHAR(50) NOT NULL, changedate DATETIME DEFAULT NULL,
     action VARCHAR(50) DEFAULT NULL
 );
 
@@ -57,10 +57,18 @@ CREATE TRIGGER IF NOT EXISTS before_workcenters_insert
     BEFORE INSERT ON WorkCenters FOR EACH ROW
  BEGIN
    DECLARE rowCnt INT DEFAULT 0;
-   SELECT COUNT(*) INTO rowCnt FROM
+   SELECT COUNT(*) INTO rowCnt FROM WorkCenterStats;
+   IF rowCnt > 0 
+        THEN UPDATE WorkCenterStats SET totalCapacity = totalCapacity + NEW.capacity;
+   ELSE 
+        INSERT INTO WorkCenterStats(totalCapacity) VALUES (new.capacity) ;
+    END IF;
+ END $
+DELIMITER ;
 
-
-;
+INSERT INTO WorkCenters(name, capacity) VALUES('Mold Machine',100);
+INSERT INTO WorkCenters(name, capacity) VALUES('Packing',200);
+SELECT * FROM WorkCenterStats;
 
 --2.After Insert Trigger:Inserts a reminder into the reminders table
      --if the birth date of birth is NULL
@@ -70,7 +78,7 @@ CREATE TABLE IF NOT EXISTS members (
     PRIMARY KEY (id)
 );
 CREATE TABLE reminders (
-    INT AUTO_INCREMENT,
+    id INT AUTO_INCREMENT,
     memberId INT,message VARCHAR(255) NOT NULL,
     PRIMARY KEY (id , memberId)
 );
@@ -79,7 +87,7 @@ CREATE DEFINER='root'@'localhost' TRIGGER IF NOT EXISTS after_members_insert
     AFTER INSERT ON members FOR EACH ROW
  BEGIN
   IF NEW.birthDate IS NULL THEN INSERT INTO reminders (memberId,message) VALUES
-    (NEW.id,CONCAT('Hi',NEW.name,' please update your date of birth');
+    (NEW.id,CONCAT('Hi ',NEW.name,' please update your date of birth'));
   END IF;
  END$$
 DELIMITER;
@@ -140,7 +148,34 @@ DELIMITER ;
 UPDATE sales SET quantity = 150 WHERE id =1;
 SHOW ERRORS;
 
---4.After update :on sales table ,check quantity to do an insert in SalesChanges
+#4i.After update : items_update_trigger 
+CREATE TABLE IF NOT EXISTS items (
+    id INT PRIMARY KEY,name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS item_changes(
+    change_id INT PRIMARY KEY AUTO_INCREMENT,
+    item_id INT,
+    change_type VARCHAR(10),
+    chanage_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items (id)
+);
+
+DELIMITER $$
+CREATE DEFINER =CURRENT_USER TRIGGER IF NOT EXISTS items_update_trigger 
+    AFTER UPDATE ON items FOR EACH ROW BEGIN 
+
+    INSERT INTO item_changes (item_id,change_type) VALUES 
+        (NEW.id ,'UPDATE') 
+ END $$       
+DELIMITER ;
+
+INSERT INTO items(id, name, price) VALUES (1, 'Item', 50.00);
+UPDATE itemsSET price = 60.00  WHERE id = 1;
+SELECT * FROM item_changes;
+
+#4.ii after update on sales
 DROP TABLE IF EXISTS SalesChanges;
 CREATE TABLE IF NOT EXISTS SalesChanges (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -207,12 +242,21 @@ CREATE TABLE IF NOT EXISTS Salaries2 (
 );
 INSERT INTO Salaries2 (employeeNumber,salary) VALUES
     (1002,5000),(1056,7000),(1076,8000);
+
 CREATE TABLE IF NOT EXISTS SalaryBudgets (
     total DECIMAL(15,2) NOT NULL
 );
 INSERT INTO IGNORE SalaryBudgets(total) SELECT SUM(salary) FROM Salaries2;
+#after delete trigger in SalaryBudgets when a row in Salaries2 is deleted
 
-DELIMITER;
+CREATE DEFINER = CURRENT_USER TRIGGER IF NOT EXISTS salaries2_aft_del 
+    AFTER DELETE ON Salaries2 FOR EACH ROW 
+   UPDATE SalaryBudgets SET total = total - old.salary;
+DELIMITER ;
+
+DELETE FROM Salaries WHERE employeeNumber = 1002;
+SELECT * FROM SalaryBudgets;
+-------------------------------
 USE classicmodels1;
 
 --7.Multiple Triggers

@@ -19,7 +19,10 @@ SHOW CREATE {PROCEDURE|FUNCTION} routineName;
 SHOW {PROCEDURE|FUNCTION} STATUS [{LIKE 'pattenr'|WHERE expr}] \G
 SHOW {FUNCTION|PROCEDURE} CODE routineName ;--presentation of the internal implementation of the named stored routine
 SELECT routine_name FROM information_schema.routines
-    WHERE routine_type ={FUNCTION|PROCEDURE} AND routine_schema= 'dbName';
+    WHERE routine_type ={'FUNCTION'|'PROCEDURE'} AND routine_schema= 'dbName';
+#Declare variable inside stored routines 
+DECLARE varName dtype(size) [DEFAULT def-value];
+
  Notes
     1. Procedure parameters: [IN|OUT|INOUT] param1 type1[(length)];
       IN is the default mode,the calling program (call proName(param1,..)) must pass an arg to the stored procedure
@@ -84,11 +87,10 @@ SELECT routime_name FROM inforfation_schema.routines
     WHERE routine_schema='classicmodels1' AND routine_type='PROCEDURE';
 SHOW FUNCTION STATUS WHERE db='classicmodels1';
 SHOW PROCEDURE STATUS WHERE db='classicmodels1';
+SELECT routime_name FROM inforfation_schema.routines WHERE routine_type='FUNCTION' AND
+    routine_schema ='classicmodels1';
 
---Drop a nonexistent procedure
-DROP PROCEDURE IF EXISTS abc;
-SHOW WARNINGS;
-
+USE classicmodels1;
 --totalOder procedure
 DELIMITER $$
 CREATE DEFINER ='root'@'localhost' PROCEDURE getTotalOrder()
@@ -213,17 +215,83 @@ CREATE FUNCTION IF NOT EXISTS customerLevel(credit DECIMAL(10,2)) RETURNS VARCHA
    DECLARE customerLevel VARCHAR(20);
    IF credit >50000 THEN SET customerLevel ='PLATINUM';
    ELSEIF credit <=50000 AND credit >=10000 THEN SET customerLevel='GOLD';
-   ELSEIF credid <10000 THEN SET customerLevel='SILVER';
+   ELSEIF credid <10000  THEN SET customerLevel = 'SILVER';
    END IF;
   RETURN (customerLevel);
  DELIMITER ;
  
+
+DELIMITER $$
+CREATE DEFINER= CURRENT_USER PROCEDURE IF NOT EXISTS customerCredit(IN p_custNum INT)
+    READS SQL DATA SQL SECURITY =DEFINER COMMENT 'checks the credit of a given customer' 
+    sp:BEGIN
+
+    DECLARE custCount INT ;
+    SELECT COUNT(*) INTO custCount FROM customers 
+        WHERE customerNumber = p_custNum;
+    IF customerNumber =0 
+        THEN LEAVE sp; 
+    END IF;
+END $$
+DELIMITER ;
+
+
+DELIMITER $$
+CREATE DEFINER ='vangelis'@'localhost' PROCEDURE IF NOT EXISTS get_order_by_cust(
+    IN cust_no INT,OUT shipped INT, OUT canceled INT , OUT resolved INT ,OUT disputed INT)
+    READS SQL DATA COMMENT 'Returns status of orders [Shipped,canceled,resolved,disputed] for a given customer' 
+    SQL SECURITY DEFINER BEGIN
+ SELECT COUNT(*) INTO shipped FROM orders WHERE customerNumber =cust_no  
+        AND status = 'Shipped';
+ SELECT COUNT(*) INTO canceled FROM orders WHERE customerNumber =cust_no 
+        AND status ='Canceled';
+ SELECT COUNT(*) INTO resolved FROM orders WHERE customerNumber = cust_no AND 
+        status = 'Resolved';
+ SELECT COUNT(*) INTO disputed FROM orders 
+    WHERE customerNumber = cust_no AND status = 'Disputed';
+END $$
+
+
 
 
 -----------------------------------------------------------------------------------------
 
 DELIMITER ;
 USE studentdb;
+SHOW FUNCTION STATUS WHERE db ='studentdb';
+SHOW PROCEDURE STATUS WHERE db = 'studentdb';
+SELECT routime_name FROM inforfation_schema.routines 
+    WHERE routine_schema ='studentdb' AND routine_type ='FUNCTION';
+SELECT routime_name FROM inforfation_schema.routines WHERE 
+    routine_type = 'PROCEDURE' AND routine_schema = 'studentdb';
+--Drop a nonexistent procedure
+DROP PROCEDURE IF EXISTS abc;
+SHOW WARNINGS;
+DELIMITER $$
+CREATE PROCEDURE CreatePersonTable()
+BEGIN
+    -- drop persons table 
+    DROP TABLE IF EXISTS persons;
+    
+    -- create persons table
+    CREATE TABLE persons(
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        first_name VARCHAR(255) NOT NULL,
+        last_name VARCHAR(255) NOT NULL
+    );
+    
+    -- insert data into the persons table
+    INSERT INTO persons(first_name, last_name)
+    VALUES('John','Doe'),
+          ('Jane','Doe');
+    
+    -- retrieve data from the persons table
+    SELECT id, first_name, last_name 
+    FROM persons;
+END $$
+
+DELIMITER ;
+
 DROP TABLE IF EXISTS calendars;
 CREATE TABLE calendars(
     date DATE PRIMARY KEY,month INT NOT NULL,quarter INT NOT NULL,
@@ -263,8 +331,8 @@ DELIMITER ;
 
 
 DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS repeatDemo()
-    COMMENT 'Concatenates numbers 1 to 9 into a string using REPEAT loop';
+CREATE DEFINER = CURRENT_USER PROCEDURE IF NOT EXISTS repeatDemo()
+    SQL SECURITY DEFINER COMMENT 'Concatenates numbers 1 to 9 into a string using REPEAT loop';
  BEGIN
   DECLARE counter INT DEFAULT 0;
   DECLARE result VARCHAR(10) DEFAULT '';
@@ -305,4 +373,6 @@ CREATE PROCEDURE createPersonTable() BEGIN
     --Retrieve data
     SELECT * FROM persons ;
  END //
+
+DELIMITER ;
 
