@@ -1,0 +1,220 @@
+/**** Useful Tips **************/
+CREATE DATABASE IF NOT EXISTS streamsDb;
+USE streamsDb;
+
+SET 'auto.offset.reset' = 'earliest';
+
+CREATE STREAM IF NOT EXISTS s1(
+    a VARCHAR KEY,
+    b  STRUCT<c VARCHAR,d INT>
+    ) WITH ( kafka_topic ='s2',partitions=1,value_format='avro');
+
+INSERT INTO s1 (a, b) VALUES ('k1', STRUCT(c := 'v1', d := 5));
+
+INSERT INTO s1 (a,b) VALUES ('k2', STRUCT(c := 'v2', d := 6));
+
+INSERT INTO s1 (a, b) VALUES ('k3', STRUCT(c :='v3', d := 7));
+
+CREATE STREAM IF NOT EXISTS s2 (
+    a VARCHAR KEY,
+    b MAP<VARCHAR,INT>
+) WITH (kafka_topic = 's2',partitions=1 ,value_format='avro')
+INSERT INTO s3 (a, b) VALUES ('k1', MAP('c' := 2, 'd' := 4));
+INSERT INTO s3 (a, b) VALUES ('k2', MAP('c' := 4, 'd' := 8));
+INSERT INTO s3 (a, b) VALUES ('k3',MAP('c':=8, 'd' :=16));
+
+CREATE STREAM s3 (
+   a VARCHAR KEY,
+    b ARRAY<INT>
+) WITH (kafka_topic = 's3',partitions = 1,value_format = 'avro');
+INSERT INTO s3 (a, b) VALUES ( 'k1', ARRAY[1]);
+INSERT INTO s3 ( a, b) VALUES ('k2', ARRAY[2, 3]);
+INSERT INTO s3 (a, b) VALUES ('k3', ARRAY[4,5,6]));
+
+/***********1. Query structured data *********************/
+    Struct Dereference operator '->'
+    Maps :De-structure suing bracket syntax '[]'
+    Arrays: De-structure arrays using bracket syntax '[]'
+
+SELECT a,b, b->* FROM  s1 EMIT CHANGES; -- ->* access all fields
+SELECT a,b,b['c'] AS c, b['d'] AS d FROM s2 EMIT CHANGES;
+SELECT a,b, b[1] AS b_1, b[2] AS b_2, b[3] AS b_3 b[-1] AS b_minus_1
+    FROM s3 EMIT CHANGES;
+
+CREATE STREAM IF NOT EXISTS s4 (
+    a  VARCHAR KEY,
+    b STRUCT<c ARRAY<INT>, d MAP<VARCHAR, STRUCT<e VARCHAR, f BOOLEAN>>>
+) WITH(kafka_topic='s4',partitions=1,value_format='avro');
+
+INSERT INTO s4(a, b) VALUES ('k1',
+    STRUCT(
+        c := ARRAY[5, 10, 15],
+        d := MAP(
+            'x' := STRUCT(e := 'v1', f := true),
+            'y' := STRUCT(e := 'v2', f := false)));
+
+INSERT INTO s4 (a,b) VALUES ('k2',
+    STRUCT(
+        c := ARRAY[3, 6, 9],
+        d := MAP(
+            'x' := STRUCT(e := 'v3', f := false),
+            'y' := STRUCT(e := 'v4', f := false) )  ));
+
+INSERT INTO s4 (a, b) VALUES ('k3',
+    STRUCT(
+        c := ARRAY[],
+        d := MAP(
+            'x' := STRUCT(e := 'v5', f : = true),
+            'y' := STRUCT(e := 'v6', f := true))));
+
+SELECT a,b,b->c[2] AS c_2, b->d['x']-> , b->d['y'] FROM s4 EMIT CHANGES;
+
+/***********2.Control the case of identifiers : Backticks*********************/
+CREATE STREAM IF NOT EXISTS `s5` (
+    `foo` VARCHAR KEY,
+    `BAR` INT,
+    `BAZ` VARCHAR,
+    `grault` STRUCT<`Corge` VARCHAR, `garply` INT>,
+    qux INT
+) WITH (kafka_topic= 's5',partitions=1,value_format ='avro');
+
+INSERT INTO `s5` (`foo`, `BAR`, `Baz`, `grault`, qux) VALUES (
+    'k1', 1, 'x', STRUCT(`Corge` := 'v1', `garply` := 5),2);
+INSERT INTO `s5` (`foo`, `BAR`, `Baz`, `grault`, qux) VALUES (
+    'k2', 3, 'y', STRUCT(`Corge` := 'v2', `garply` := 6), 4);
+INSERT INTO `s5` (`foo`, `BAR`, `Baz`, `grault`, qux) VALUES (
+    'k3', 5, 'z', STRUCT(`Corge` := 'v3', `garply` := 8), 6);
+
+SELECT `foo`,`BAR`,`BAZ`,`grault`->`Corge`, `grault`->`garply` ,
+    qux, QUX AS qux2 FROM `s5`
+EMIT CHANGES ; --Push query
+
+/************ 3. Substitute Variables ***************************************/
+--
+SET 'ksql.variable.substitution.enable'=true; --defaults to true
+DEFINE format= 'AVRO';
+DEFINE replicas =3;
+SHOW VARIABLES;
+CREATE STREAM IF NOT EXISTS stream1 (
+    id INT
+) WITH (kafka_topic = 'stream1' ,value_format = '${format}',
+        replicas = ${replicas});
+
+SELECT '$${format}', $${replicas} FROM stream1;
+
+CREATE STREAM  ${streamName} (
+    ${colName1} INT, ${colName2} STRING
+) WITH (kafka_topic= ,value_format ='${format}', replicas = ${replicas}
+);
+INSERT INTO ${streamName} (${colName1}, ${colName2}) VALUES
+    (${val1} ,'${val2}');
+
+UNDEFINE format; UNDEFINE replicas;
+
+/************ 4. Materialized Viewa:
+  (i)Convert a changelog to a table ,ie,Materializing a changelog into a table:Viewing the data that reflects the latest change for each key  is done by creating a table using the following syntax: 
+ 
+
+  Let's suppose we have a changelog topic consisting of ther following columns:[K:Varchar,V1:Int,V2:Varchar,V3:Boolean]
+ ***************************************/
+
+CREATE SOURCE TABLE latest_view (
+    k VARCHAR PRIMARY KEY, v1 INT, v2 VARCHAR, v3 Boolean
+) WITH (kafka_topic ='changelog',value_format= 'json',partitions = 1);
+
+/************************************************************************************************************************
+        5.Use custom Timestamp Columns 
+ For time-related processing over events,KsqlDB uses the timestamps from the events.
+ KsqlDB defaults to using the timestamp from the underlying kafka record metadata ,thus we need to tell KsqlDB where to find the timestamp attribute within the events.
+ Using event-time allows KsqlDB to handle out-of-order events when KsqlDB performs time-related processing.
+ ROWTIME captures the timestamp of a record.
+ 1.If the custom column is a String ,we have to set the timestamp_format property telling KsqlDB how to parse the string,ie specifying the format.
+ 2.using columns of type BigInt (Long, milliseconds since Unix epoch).There is no need to specify a timestamp_format as the timestamp is already a number and KsqlDB does not need to parse it.
+ 3.Using columns of type TIMESTAMP would require dates to be in 'yyyy-MM-ddThh:mm:ss[.S]' format 
+ 
+*************************************************************************************************************************/
+CREATE STREAM IF NOT EXISTS stream2 (
+    k VARCHAR KEY,
+    ts VARCHAR ,v1 INT, V2 VARCHAR
+) WITH (kafka_topic='stream2',partitions=1,value_format ='avro',
+    timestamp = 'ts',timestamp_format = 'yyyy-MM-dd HH:mm:ss'); --The custom column to be used as timestamp 
+
+INSERT INTO stream2 ( k, ts, v1, v2) VALUES (
+   ( 'k1', '2020-05-04 01:00:00', 0, 'a');
+
+INSERT INTO stream2(  k, ts, v1, v2) VALUES 
+    ('k2', '2020-05-04 02:00:00', 1, 'b');
+
+SELECT k,ROWTIME ,
+    ts,v1,v2 FROM stream2 EMIT CHANGES;
+
+--Derive a stream from stream2 telling KsqlDB to use the event-time.
+CREATE STREAM IF NOT EXISTS stream3 WITH (timestamp ='ts',timestamp_format = 'yyyy-MM-dd HH:mm:ss') 
+ AS SELECT * FROM stream2 EMIT CHANGES;
+
+SELECT k,ROWTIME,
+    ts,v1,v2 FROM stream3 EMIT CHANGES;
+
+--Timestamps as long values
+CREATE STREAM IF NOT EXISTS stream4 (
+    k VARCHAR KEY,ts BIGINT,v1 INT, v2 VARCHAR
+)WITH (kafka_topic='stream4',paritions=1,value_format='avro',timestamp = 'ts');    
+INSERT INTO stream4 (
+    k, ts, v1, v2) VALUES 
+    ('k1', 1562634000000, 0, 'a');
+INSERT INTO stream4 (k, ts, v1, v2) VALUES 
+    ('k2', 1588509000000, 1, 'b');
+
+INSERT INTO stream4(k, ts, v1, v2) VALUES 
+    ('k3', 1588736700000, 2, 'c');
+
+SELECT K,ROWTIME,ts,
+    v1,v2 FROM stream4 EMIT CHANGES;
+
+--Timestamps represented by TIMESTAMP columns
+CREATE STREAM IF NOT EXISTS stream5(
+    k VARCHAR KEY,ts TIMESTAMP, v1 BIGINT, v2 VARCHAR  
+) WITH (kafka_topic= 'stream5',partitions=1,value_format='avro',timestamp='ts');
+
+INSERT INTO stream5 (k, ts, v1, v2) VALUES 
+    ('k1', '2019-07-09T01:00', 0, 'a');
+
+INSERT INTO stream5 (
+    k, ts, v1, v2) VALUES 
+   ( 'k2', '2020-05-03T12:30:00', 1, 'b');
+
+INSERT INTO stream5(k, ts, v1, v2) VALUES 
+(9'k3', '2020-05-06T03:45', 2, 'c');
+
+SELECT k,ROWTIME,ts,v1,v2 FROM stream5 EMIT CHANGES;
+
+
+/****************** 6. Update a Running Persistent Query
+**************************************************/
+
+/**********************************************************************************
+        7.Transform Columns with Structured Data
+ Lambda Operator =>   
+ Lambda invocation functions:
+    FILTER(arr,x =>...),FILTER(map,(k,v)=>..),TRANSFORM(arr,x=>...)  ,TRANSFORM(map,(k,v)=>...,(k,v)=>...)
+    REDUCE(arr,state,(s,x)=>..),REDUCE(map,state,(s,k,v)=>..)
+************************************************************************************/
+
+CREATE STREAM IF NOT EXISTS stream6 (
+    id INT,
+    mp MAP<STRING,INTEGER>,
+    arr ARRAY<INTEGER>,
+    lambda_map MAP<STRING,ARRAY<DECIMAL(2,3)>> 
+)WITH (kafka_topic='stream6',partitions=1,value_format='avro');
+
+--Convert mp keys to upercase
+C
+INSERT INTO stream6 (id,mp,arr,lambda_map) VALUES 
+
+
+
+/************************ 8.Test an application *****************/
+
+/***********************9.Create a User-Defined Function ***************/
+
+/**********************10. Using Connectors *********************/
