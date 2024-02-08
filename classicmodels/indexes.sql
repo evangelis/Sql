@@ -15,9 +15,15 @@
    ALTER TABLE ADD CONSTRAINT consName UNIQUE {INDEX|KEY}(col1,..)
    ALTER TABLE RENAME {INDEX|KEY} old_idx TO new_idxName
    ALTER TABLE DROP {INDEX|KEY} idxName
+<<<<<<< HEAD
    ANALYZE [NO_WRITE_TO_BINLOG|LOCAL] TABLE tbl1 --key distribution analysis
    USE INDEX idx_list
    FORCE INDEX idxNam1,...
+=======
+   ANALYZE TABLE [NO_WRITE_TO_BINLOG|LOCAL] TABLE tbl1 --key distribution analysis
+   USE INDEX idxName
+
+>>>>>>> origin/classicmodels
  Index is a data structure (BTree,Hash) that improves the speed of data
  retrieval on a table at the cost of additional storage to maintain
  When creating a table with a PRIMARY KEY or UNIQUE KEY MySQL creates a
@@ -135,8 +141,12 @@
     (i)In Natural Language Mode :the match (col1,..) performs a natural language search for a string
        Results are sorted by relevance
        It doesnt support boolean operators,stopwords should be included with double quotes
+<<<<<<< HEAD
     (ii)WITH QUERY EXPANSION:Widens the search results of the full text searches based on automatic    
     (iii)In Natural Language Mode With Query Expansion :Similar to the above but also extends search
+=======
+    (ii)WITH QUERY EXPANSION:Widens the search results of the full text searches based on automatic    (iiI)In Natural Language Mode With Query Expansion :Similar to the above but also extends search
+>>>>>>> origin/classicmodels
         to include synonyms of the words
         It doesn't support boolean operators
         Useful when we want to capture a wider range of relevant content
@@ -309,7 +319,11 @@ CREATE TABLE documents (
 INSERT INTO documents(contents) VALUES
   ('MySQL Database'),('MySQL'),('Database'),('SQL'),('A fork of MySQL');
 
+<<<<<<< HEAD
 #In natural language mode :search for the documents whose contents have the words "mysql"
+=======
+n natural language mode :search for the documents whose contents have the words "mysql"
+>>>>>>> origin/classicmodels
 SELECT id,contents MATCH(contents) AGAINST('mysql')
  FROM documents WHERE
     MATCH(contents) AGAINST ('mysql' IN NATURAL LANGUAGE MODE);
@@ -337,7 +351,11 @@ USER classcimdodels1;
 --check if a given string contains any digits
 SELECT 'MySQL 8.2' REGEXP '\\d+'; --1
 --Checks if the string 'MySQL 8.0' has a version that includes a digit a dot and a digit,
+<<<<<<< HEAD
 SELECT 'MySQL 8.2' REGEXP '\\d\.\\d';
+=======
+SELECT '' REGEXP '\\d\.\\d';
+>>>>>>> origin/classicmodels
 --Find products whose names contain the number 193 followed by any single digit
 SELECT productName FROM products WEHRE
     productName REGEXP '193\\d';
@@ -376,12 +394,20 @@ SELECT REGEXP_REPLACE('(212)-456-7890','[^0-9]+',6) phone_number;
 SELECT REGEXP_REPLACE('(212)-456-78900','\\D+',1,1) phone_nmumber;
 
 USE studentdb;
+<<<<<<< HEAD
 CREATE TABLE IF NOT  EXISTS contacts2 (
+=======
+CREATE TABLE IF NOT EXISTS contacts2 (
+>>>>>>> origin/classicmodels
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(100) NOT NULL
 );
+<<<<<<< HEAD
 INSERT IGNORE INTO contacts2 (name, phone) VALUES
+=======
+INSERT INTO IGNORE contacts2 (name, phone) VALUES
+>>>>>>> origin/classicmodels
     ('John Doe', '+1(484)-476-0002'),('Jane Smith', '+1(555)-987-6543'),
     ('Bob Johnson', '+1(555)-555-5555'),('Alice Brown', '+1(555)-111-2222'),
     ('Eve White', '+1(555)-999-8888');
@@ -389,8 +415,13 @@ INSERT IGNORE INTO contacts2 (name, phone) VALUES
 --Replace non-digit characters in the phone number with an empty string
 SELECT * FROM contacts2;
 UPDATE contacts SET
+<<<<<<< HEAD
     phone= REGEXP_REPLACE(phone,'\\D+','');
 SELECT * FROM contacts2;
+=======
+    phone= REGEXP_REPLACE(phobne,'\\D+','');
+SELECT * FROM contacts;
+>>>>>>> origin/classicmodels
 ALTER TABLE contacts2 ADD COLUMN email VARCHAR(200) NOT NULL;
 --add a check constraint to the email column using regex: "^\S+@\S+\.\s+$" & regexp_like()
 ALTER TABLE contacts2 ADD CONSTRAINT email_valid CHECK(
@@ -398,10 +429,16 @@ ALTER TABLE contacts2 ADD CONSTRAINT email_valid CHECK(
 );
 INSERT INTO contacts2 (name,phone,email) VALUES
     ("John Doe","(212)-345-5743", "john.doe@mysqltutorial.org");
+<<<<<<< HEAD
 INSERT INTO contacts2 (name,phone,email) VALUES  ("Jane Doe","(212)-345-4567","jane.doe@mysqltutorial");-- check
 
 ALTER TABLE contacts2 DROP INDEX email_valid;
 --Reimplement email validation using the fololowing regex pattern:
+=======
+INSERT INTO contacts2 (name,phone,email) VALUES  ("Jane Doe","(212)-345-4567",jane.doe@mysqltutorial");-- check
+ALTER TABLE contacts2 DROP INDEX email_valid;
+--Reimplement email validation using the fololowing regfex pattern:
+>>>>>>> origin/classicmodels
 --^\w+([.-]?\w+)*@\w+([.+]?\w+)*(\.\w{2,3})+$
 ALTER TABLE contacts2 ADD CONSTRAINT email_validation CHECK(
     REGEXP_LIKE(email,'^\\w+([.+]?\w+)*@\\w+([.+]\\w+)*(\\.\\w{2,3})+$')=1);
