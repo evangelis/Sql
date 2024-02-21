@@ -1,0 +1,51 @@
+Name   :John Doe
+Adress :133 Patission street ,Athens 
+City   :Athens,Attica 13231
+email  :john_doe@gmail.com
+phone  :+30 69754333891
+
+Objective:
+ Detail-oriented and results-driven Big Data Engineer with a solid foundation in economics and computer science.
+ Leveraging advanced skills in AWS Big Data, Apache Spark, and Apache Kafka to drive data-driven insights and optimize business processes. 
+ Seeking to contribute expertise in big data analytics to a dynamic organization.
+
+Education:
+
+Master of Science (MSc) in Economics
+Athens University of Economics and Business (AUEB), Greece
+Graduated: 2009
+
+Bachelor of Science (BSc) in Computer Science (2nd Degree)
+University of Athens (UoA), Greece
+Graduated: 20017
+
+Certifications:
+
+AWS Certified Big Data Engineer
+Apache Spark Developer Certification
+Apache Kafka Developer Certification
+Professional Experience:
+Big Data Engineer - [Company Name], [Location]
+[Dates of Employment]
+
+Collaborated with cross-functional teams to design, develop, and implement big data solutions using AWS services such as Amazon EMR, Amazon Redshift, and Amazon S3.
+Utilized Apache Spark to process and analyze large datasets, improving data processing efficiency by 30%.
+Designed and implemented real-time data streaming pipelines using Apache Kafka, enabling timely insights for business stakeholders.
+Developed and maintained ETL processes to extract, transform, and load data from various sources into a centralized data lake.
+Implemented data governance policies and security measures to ensure compliance with industry regulations and best practices.
+Provided technical expertise and support to optimize query performance and troubleshoot data processing issues.
+Technical Skills:
+
+Programming Languages: Java, Python, Scala
+Big Data Technologies: Apache Hadoop, Apache Spark, Apache Kafka, HDFS, Hive, Pig
+Cloud Platforms: Amazon Web Services (AWS), Google Cloud Platform (GCP), Microsoft Azure
+Database Systems: MySQL, PostgreSQL, MongoDB
+Data Visualization: Tableau, Power BI, Apache Superset
+Version Control Systems: Git, SVN
+Languages:
+
+Greek (Native)
+English (Fluent)
+References:
+Available upon request.
+
